@@ -1,0 +1,38 @@
+import torch
+import torch.nn as nn
+
+
+{% if initialization != "none" %}
+def initialize_weights(m):
+    if isinstance(m, nn.Conv2d) or isinstance(m, nn.Linear):
+        {% if initialization == "kaiming" %}
+        nn.init.kaiming_uniform_(m.weight.data, nonlinearity='relu')
+        {% elif initialization == "xavier" %}
+        nn.init.xavier_uniform(m.weight.data)
+        {% endif %}
+        if m.bias is not None:
+            nn.init.constant_(m.bias.data, 0)
+
+    elif isinstance(m, nn.BatchNorm2d):
+        nn.init.constant_(m.weight.data, 1)
+        nn.init.constant_(m.bias.data, 0)
+{% endif %}
+
+class {{ model_name }}(torch.nn.Module):
+    def __init__(self, graph):
+        super({{ model_name }}, self).__init__()
+        self.layers = nn.ModuleList([
+        {% for n in layers %}
+        nn.{{n}}{{ params[loop.index0] }},
+        {% endfor %}
+        ])
+
+    {% if initialization != "none" %}
+        self.apply(initialize_weights)
+    {% endif %}
+
+    def forward(self, x):
+        {% for n in layers %}
+            {{outputs[loop.index0]}} = self.layers[{{loop.index0}}] ( {{inputs[loop.index0]}} )
+        {% endfor %}
+        return x

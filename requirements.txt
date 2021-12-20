@@ -1,0 +1,14 @@
+torch>=1.9.1
+streamlit_drawable_canvas>=0.8.0
+streamlit_plotly_events>=0.0.6
+networkx>=2.6.3
+numpy>=1.17.4
+graphviz>=0.17
+jupytext>=1.13.0
+opencv-python-headless
+Jinja2>=2.11.3
+torchvision>=0.10.1
+plotly>=4.4.1
+streamlit>=1.2.0
+tqdm>=4.62.2
+Pillow>=8.4.0
