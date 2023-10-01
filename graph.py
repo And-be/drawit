@@ -7,6 +7,11 @@ import plotly.graph_objects as go
 from networkx.drawing.nx_agraph import graphviz_layout
 from graphviz import Digraph
 
+
+# detect arrows https://stackoverflow.com/questions/66718462/python-cv-detect-different-types-of-arrows
+# https://rsdharra.com/blog/lesson/16.html
+# https://learnopencv.com/convex-hull-using-opencv-in-python-and-c/
+
 class Node():
     def __init__(self, uid, op='Conv2d', input_shape=None, output_shape=None, info=None, params=None):
         """
@@ -69,6 +74,11 @@ def preprocess(img):
     img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     _, threshold = cv2.threshold(img_gray, 127, 255, cv2.THRESH_BINARY)
     threshold = cv2.bitwise_not(threshold)
+    #     img_blur = cv2.GaussianBlur(img_gray, (5, 5), 1)
+    #     img_canny = cv2.Canny(img_blur, 50, 50)
+    #     kernel = np.ones((3, 3))
+    #     img_dilate = cv2.dilate(img_canny, kernel, iterations=2)
+    #     img_erode = cv2.erode(img_dilate, kernel, iterations=1)
     return threshold
 
 
@@ -140,6 +150,10 @@ def building_graph(img, graph):
     for cnt in contours:
         peri = cv2.arcLength(cnt, True)
         approx = cv2.approxPolyDP(cnt, 0.025 * peri, True)
+        #     for i in approx:
+        #         cv2.circle(img, tuple(i.squeeze()), 3, (0, 0, 255), cv2.FILLED)
+        #     cv2.drawContours(img, [cnt], -1, (0, 255, 0), 3)
+
         hull = cv2.convexHull(approx, returnPoints=False)
         sides = len(hull)
 
@@ -150,15 +164,23 @@ def building_graph(img, graph):
             x = int(M['m10'] / M['m00'])
             y = int(M['m01'] / M['m00'])
 
+        # if sides == 2:  # line
+        #     print('Line')
+        #     line_tip_1 = tuple(approx[hull[0]].squeeze())
+        #     line_tip_2 = tuple(approx[hull[1]].squeeze())
+        #     get_edge(line_tip_1, line_tip_2, graph)
+
         if len(graph.nodes) > 1 and \
                 6 > sides > 3 and \
                 ((sides + 2 == len(approx)) or (sides + 1 == len(approx))):
+            print('Arrow')
             arrow_tip, arrow_end = find_tip(approx[:, 0, :], hull.squeeze())
             cv2.circle(img, arrow_tip, 3, (0, 0, 255), cv2.FILLED)
             cv2.circle(img, arrow_end, 3, (0, 255, 0), cv2.FILLED)
             get_edge(arrow_tip, arrow_end, graph)
             added = True
         elif len(approx) <= 6 and len(approx) >= 3:
+            print('Quadrilateral')
             cv2.putText(img, 'Quadrilateral', (x, y), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
             label = 'layer'
             # todo: from text or select
@@ -170,6 +192,7 @@ def building_graph(img, graph):
             graph.nodes.append(node)
             added = True
         else:
+            print('Circle or text')
             cv2.putText(img, 'circle', (x, y), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
 
     return added

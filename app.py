@@ -7,7 +7,7 @@ from gencode import write_model_code
 import cv2
 import numpy as np
 
-st.set_page_config(page_title="Draw a pytorch model", layout="wide")
+st.set_page_config(page_title="Draw a model app", layout="wide")
 
 #variables
 GDRAW = 'dot' #use dot or plotly to plot graph
@@ -29,6 +29,9 @@ if 'img_mask' not in st.session_state:
 #sidebar
 with st.sidebar:
     # Specify canvas parameters in application
+    # stroke_width = st.slider("Stroke width: ", 1, 25, 3)
+    # stroke_color = st.sidebar.color_picker("Stroke color hex: ")
+    # bg_color = st.sidebar.color_picker("Background color hex: ", "#eee")
     bg_image = st.file_uploader("Background image:", type=["png", "jpg"])
     drawing_mode = st.selectbox(
         "Drawing tool:", ("freedraw", "line", "rect", "circle", "transform")
@@ -65,6 +68,7 @@ with col1:
         img = preprocess(img) #convert to grayscale
 
         if np.sum(img == 0) == (img.shape[0] * img.shape[1]):
+            print('RESET')
             st.session_state.graph.reset()
             st.session_state.img_mask = np.zeros((400, 600), dtype=np.uint8)
             st.session_state.code = ""
@@ -81,7 +85,7 @@ with col1:
             option_change = st.selectbox('Select layer to change', [nd.id for nd in st.session_state.graph.nodes])
             new_layer = st.text_input("Change to layer:", help='e.g.: Conv2d(64, 64, 3)')
             submit_button = st.button(label='go')
-
+            
         if submit_button:
             #get node change it
             sp = new_layer.find("(")
@@ -105,5 +109,12 @@ with col2:
         st.code(st.session_state.code)
         st.download_button("🐍 Download (.py)", st.session_state.code, "generated-code.py")
         st.download_button("📓 Download (.ipynb)", st.session_state.notebook, "generated-notebook.ipynb")
+
+
+# if canvas_result.json_data is not None:
+#     objects = pd.json_normalize(canvas_result.json_data["objects"]) # need to convert obj to str because PyArrow
+#     for col in objects.select_dtypes(include=['object']).columns:
+#         objects[col] = objects[col].astype("str")
+#     st.dataframe(objects)
 
 
